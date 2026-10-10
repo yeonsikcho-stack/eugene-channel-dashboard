@@ -1,0 +1,62 @@
+import type { Channel, MetricChange, MetricDirection } from '@/types';
+
+export const CHANNELS: Channel[] = ['online_sabo', 'youtube', 'instagram', 'naver_blog'];
+
+export const CHANNEL_LABELS: Record<Channel, string> = {
+  online_sabo: '온라인사보',
+  youtube: '유튜브',
+  instagram: '인스타그램',
+  naver_blog: '네이버 블로그',
+};
+
+export interface MetricDef {
+  key: string;
+  label: string;
+}
+
+export const CHANNEL_METRIC_DEFS: Record<Channel, MetricDef[]> = {
+  online_sabo: [
+    { key: 'visitors', label: '방문자수' },
+    { key: 'views', label: '조회수' },
+  ],
+  youtube: [
+    { key: 'subscribers', label: '구독자수' },
+    { key: 'views', label: '조회수' },
+    { key: 'watch_time', label: '시청시간' },
+  ],
+  instagram: [
+    { key: 'followers', label: '팔로워' },
+    { key: 'reach', label: '도달수' },
+    { key: 'saves', label: '저장수' },
+  ],
+  naver_blog: [
+    { key: 'views', label: '조회수' },
+    { key: 'visitors', label: '방문자수' },
+  ],
+};
+
+export function currentYearMonth(): string {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+}
+
+export function shiftYearMonth(yearMonth: string, delta: number): string {
+  const [year, month] = yearMonth.split('-').map(Number);
+  const date = new Date(year, month - 1 + delta, 1);
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+}
+
+export function computeChange(current: number | null, previous: number | null): MetricChange {
+  if (previous === null) {
+    return { current, previous, diff: null, pct: null, direction: 'na' };
+  }
+  if (current === null) {
+    return { current, previous, diff: null, pct: null, direction: 'na' };
+  }
+
+  const diff = current - previous;
+  const pct = previous === 0 ? null : Math.round((diff / previous) * 1000) / 10;
+  const direction: MetricDirection = diff > 0 ? 'up' : diff < 0 ? 'down' : 'flat';
+
+  return { current, previous, diff, pct, direction };
+}
