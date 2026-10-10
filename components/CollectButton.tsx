@@ -3,8 +3,9 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
+import type { Channel } from '@/types';
 
-export function YoutubeCollectButton() {
+export function CollectButton({ channel }: { channel: Channel }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -13,7 +14,7 @@ export function YoutubeCollectButton() {
     setLoading(true);
     setMessage(null);
     try {
-      const response = await fetch('/api/collectors/youtube', { method: 'POST' });
+      const response = await fetch(`/api/collectors/${channel}`, { method: 'POST' });
       const data = await response.json();
       if (!response.ok) {
         setMessage(data.error ?? '수집에 실패했습니다.');

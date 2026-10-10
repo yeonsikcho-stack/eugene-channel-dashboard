@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { Badge } from '@/components/ui/Badge';
 import { Card } from '@/components/ui/Card';
-import { YoutubeCollectButton } from '@/components/YoutubeCollectButton';
+import { CollectButton } from '@/components/CollectButton';
 import { getDashboardData } from '@/lib/metrics';
 import { currentYearMonth, shiftYearMonth } from '@/lib/channels';
 import type { MetricCardItem, MetricChange } from '@/types';
@@ -74,7 +74,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
               <div className="mt-3 pt-3 border-t border-gray-100 text-xs text-[#999]">
                 마지막 업데이트: {lastUpdated ?? '아직 없음'}
               </div>
-              {card.channel === 'youtube' && <YoutubeCollectButton />}
+              {card.channel !== 'naver_blog' && <CollectButton channel={card.channel} />}
             </Card>
           );
         })}

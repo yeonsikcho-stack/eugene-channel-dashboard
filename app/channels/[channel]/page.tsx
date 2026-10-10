@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import { Badge } from '@/components/ui/Badge';
 import { Card } from '@/components/ui/Card';
 import { TrendChart } from '@/components/TrendChart';
-import { YoutubeCollectButton } from '@/components/YoutubeCollectButton';
+import { CollectButton } from '@/components/CollectButton';
 import { getChannelTrend, getDashboardData } from '@/lib/metrics';
 import { fetchYoutubeRecentVideos } from '@/lib/youtube';
 import { CHANNELS, currentYearMonth } from '@/lib/channels';
@@ -33,7 +33,7 @@ export default async function ChannelPage({ params }: ChannelPageProps) {
           <h1 className="text-xl font-semibold text-[#0a0a0a] mt-1">{card.label}</h1>
           <p className="text-sm text-[#555] mt-1">{yearMonth} 현재 지표와 최근 추이</p>
         </div>
-        {channel === 'youtube' && <YoutubeCollectButton />}
+        {channel !== 'naver_blog' && <CollectButton channel={channel} />}
       </div>
 
       <Card title="이번 달 지표">

@@ -74,6 +74,8 @@
 
 연결이 쉬운 순서로 붙인다. 유튜브가 가장 간단하고, 인스타그램은 연동 준비가 가장 번거롭고, 온라인사보는 사내 정보 확인이 선행되어야 한다.
 
+> **업데이트 (2026-10-10)**: naver-blog-collector는 실제로 시도해본 결과 네이버의 로그인 보안 확인(캡차)에 막혀 보류되었다. 네이버 블로그는 당분간 manual-metrics-entry로 수동 입력한다. (자세한 내용은 `docs/specs/naver-blog-collector.md` 참고)
+
 **부가 (여유 있을 때)**
 
 9. monthly-summary-view

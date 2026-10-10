@@ -1,6 +1,6 @@
 import type { YoutubeVideoSummary } from '@/types';
 
-export interface YoutubeSnapshot {
+export interface YoutubeSnapshot extends Record<string, number> {
   subscribers: number;
   views: number;
 }
