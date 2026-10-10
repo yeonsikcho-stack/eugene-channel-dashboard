@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { Badge } from '@/components/ui/Badge';
 import { Card } from '@/components/ui/Card';
+import { YoutubeCollectButton } from '@/components/YoutubeCollectButton';
 import { getDashboardData } from '@/lib/metrics';
 import { currentYearMonth, shiftYearMonth } from '@/lib/channels';
 import type { MetricCardItem, MetricChange } from '@/types';
@@ -56,7 +57,15 @@ export default async function HomePage({ searchParams }: HomePageProps) {
             .at(-1);
 
           return (
-            <Card key={card.channel} title={card.label}>
+            <Card key={card.channel}>
+              <div className="flex items-center justify-between mb-3">
+                <Link href={`/channels/${card.channel}`} className="text-sm font-semibold text-[#0a0a0a] hover:underline">
+                  {card.label}
+                </Link>
+                <Link href={`/channels/${card.channel}`} className="text-xs text-[#999] hover:text-[#555]">
+                  자세히 보기 →
+                </Link>
+              </div>
               <div className="space-y-3">
                 {card.metrics.map((metric) => (
                   <MetricRow key={metric.metricKey} metric={metric} />
@@ -65,6 +74,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
               <div className="mt-3 pt-3 border-t border-gray-100 text-xs text-[#999]">
                 마지막 업데이트: {lastUpdated ?? '아직 없음'}
               </div>
+              {card.channel === 'youtube' && <YoutubeCollectButton />}
             </Card>
           );
         })}

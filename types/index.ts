@@ -55,3 +55,26 @@ export interface UpsertMetricResult {
   ok: boolean;
   skippedReason?: 'manual_override';
 }
+
+export interface TrendSeries {
+  key: string;
+  label: string;
+  points: { month: string; value: number | null }[];
+}
+
+export interface ChannelTrend {
+  channel: Channel;
+  label: string;
+  months: string[];
+  series: TrendSeries[];
+}
+
+export interface YoutubeVideoSummary {
+  videoId: string;
+  title: string;
+  publishedAt: string;
+  thumbnailUrl: string | null;
+  views: number | null;
+  likes: number | null;
+  comments: number | null;
+}

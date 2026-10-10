@@ -8,8 +8,10 @@ import {
   shiftYearMonth,
 } from '@/lib/channels';
 import type {
+  Channel,
   ChannelCard,
   ChannelMetricRow,
+  ChannelTrend,
   DashboardData,
   MetricSource,
   UpsertMetricInput,
@@ -56,6 +58,29 @@ export function getDashboardData(yearMonth: string = currentYearMonth()): Dashbo
   }));
 
   return { yearMonth, previousYearMonth, cards };
+}
+
+export function getChannelTrend(channel: Channel, monthsBack = 6): ChannelTrend {
+  const end = currentYearMonth();
+  const start = shiftYearMonth(end, -(monthsBack - 1));
+  const rows = getTrend(channel, start, end);
+
+  const months: string[] = [];
+  for (let i = 0; i < monthsBack; i++) months.push(shiftYearMonth(start, i));
+
+  const byMetric = new Map<string, Map<string, number>>();
+  for (const row of rows) {
+    if (!byMetric.has(row.metricKey)) byMetric.set(row.metricKey, new Map());
+    byMetric.get(row.metricKey)!.set(row.yearMonth, row.value);
+  }
+
+  const series = CHANNEL_METRIC_DEFS[channel].map((def) => ({
+    key: def.key,
+    label: def.label,
+    points: months.map((month) => ({ month, value: byMetric.get(def.key)?.get(month) ?? null })),
+  }));
+
+  return { channel, label: CHANNEL_LABELS[channel], months, series };
 }
 
 export function getTrend(channel: string, fromMonth: string, toMonth: string): ChannelMetricRow[] {
