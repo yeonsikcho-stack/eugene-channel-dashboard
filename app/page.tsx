@@ -2,7 +2,8 @@ import Link from 'next/link';
 import { Badge } from '@/components/ui/Badge';
 import { Card } from '@/components/ui/Card';
 import { CollectButton } from '@/components/CollectButton';
-import { getDashboardData } from '@/lib/metrics';
+import { Sparkline } from '@/components/Sparkline';
+import { getChannelTrend, getDashboardData } from '@/lib/metrics';
 import { currentYearMonth, shiftYearMonth } from '@/lib/channels';
 import type { MetricCardItem, MetricChange } from '@/types';
 
@@ -55,6 +56,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
             .filter((value): value is string => Boolean(value))
             .sort()
             .at(-1);
+          const trend = getChannelTrend(card.channel);
 
           return (
             <Card key={card.channel}>
@@ -68,7 +70,11 @@ export default async function HomePage({ searchParams }: HomePageProps) {
               </div>
               <div className="space-y-3">
                 {card.metrics.map((metric) => (
-                  <MetricRow key={metric.metricKey} metric={metric} />
+                  <MetricRow
+                    key={metric.metricKey}
+                    metric={metric}
+                    sparklinePoints={trend.series.find((s) => s.key === metric.metricKey)?.points.map((p) => p.value) ?? []}
+                  />
                 ))}
               </div>
               <div className="mt-3 pt-3 border-t border-gray-100 text-xs text-[#999]">
@@ -83,7 +89,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   );
 }
 
-function MetricRow({ metric }: { metric: MetricCardItem }) {
+function MetricRow({ metric, sparklinePoints }: { metric: MetricCardItem; sparklinePoints: (number | null)[] }) {
   return (
     <div className="flex items-center justify-between border-b border-gray-100 pb-3 last:border-0 last:pb-0">
       <div>
@@ -92,15 +98,18 @@ function MetricRow({ metric }: { metric: MetricCardItem }) {
           {metric.change.current !== null ? metric.change.current.toLocaleString() : '—'}
         </div>
       </div>
-      <div className="text-right space-y-1">
-        <ChangeBadge change={metric.change} />
-        {metric.source && (
-          <div>
-            <Badge color={metric.source === 'auto' ? 'blue' : 'gray'} size="sm">
-              {metric.source === 'auto' ? '자동' : '수동'}
-            </Badge>
-          </div>
-        )}
+      <div className="flex items-center gap-3">
+        <Sparkline points={sparklinePoints} />
+        <div className="text-right space-y-1">
+          <ChangeBadge change={metric.change} />
+          {metric.source && (
+            <div>
+              <Badge color={metric.source === 'auto' ? 'blue' : 'gray'} size="sm">
+                {metric.source === 'auto' ? '자동' : '수동'}
+              </Badge>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
