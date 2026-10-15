@@ -11,3 +11,13 @@ CREATE TABLE IF NOT EXISTS channel_metrics (
   collected_at TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
   UNIQUE (channel, metric_key, year_month)
 );
+
+CREATE TABLE IF NOT EXISTS oauth_connections (
+  provider TEXT PRIMARY KEY,
+  refresh_token TEXT NOT NULL,
+  access_token TEXT,
+  token_expires_at TEXT,
+  status TEXT NOT NULL DEFAULT 'connected',
+  last_error TEXT,
+  connected_at TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
+);

@@ -101,6 +101,7 @@ function MetricRow({ metric, sparklinePoints }: { metric: MetricCardItem; sparkl
       <div className="flex items-center gap-3">
         <Sparkline points={sparklinePoints} />
         <div className="text-right space-y-1">
+          <div className="text-[10px] text-[#999]">전월 대비</div>
           <ChangeBadge change={metric.change} />
           {metric.source && (
             <div>

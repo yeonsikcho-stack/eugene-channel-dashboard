@@ -22,7 +22,6 @@ export const CHANNEL_METRIC_DEFS: Record<Channel, MetricDef[]> = {
   youtube: [
     { key: 'subscribers', label: '구독자수' },
     { key: 'views', label: '조회수' },
-    { key: 'watch_time', label: '시청시간' },
   ],
   instagram: [
     { key: 'followers', label: '팔로워' },
@@ -44,6 +43,16 @@ export function shiftYearMonth(yearMonth: string, delta: number): string {
   const [year, month] = yearMonth.split('-').map(Number);
   const date = new Date(year, month - 1 + delta, 1);
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+}
+
+export function monthsBetween(fromMonth: string, toMonth: string): string[] {
+  const months: string[] = [];
+  let cursor = fromMonth;
+  while (cursor <= toMonth) {
+    months.push(cursor);
+    cursor = shiftYearMonth(cursor, 1);
+  }
+  return months;
 }
 
 export function computeChange(current: number | null, previous: number | null): MetricChange {

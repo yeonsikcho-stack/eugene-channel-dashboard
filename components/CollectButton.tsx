@@ -20,7 +20,7 @@ export function CollectButton({ channel }: { channel: Channel }) {
         setMessage(data.error ?? '수집에 실패했습니다.');
         return;
       }
-      setMessage('수집 완료');
+      setMessage(data.viewsError ? `수집 완료 (조회수 제외: ${data.viewsError})` : '수집 완료');
       router.refresh();
     } catch {
       setMessage('수집 중 문제가 발생했습니다.');

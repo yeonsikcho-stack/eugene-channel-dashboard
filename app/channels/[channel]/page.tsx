@@ -4,24 +4,57 @@ import { Badge } from '@/components/ui/Badge';
 import { Card } from '@/components/ui/Card';
 import { TrendChart } from '@/components/TrendChart';
 import { CollectButton } from '@/components/CollectButton';
+import { YoutubeOAuthPanel } from '@/components/YoutubeOAuthPanel';
+import { TrendRangeControls } from '@/components/TrendRangeControls';
 import { getChannelTrend, getDashboardData } from '@/lib/metrics';
 import { fetchYoutubeRecentVideos } from '@/lib/youtube';
-import { CHANNELS, currentYearMonth } from '@/lib/channels';
-import type { Channel, MetricChange } from '@/types';
+import { getYoutubeDailyTrend } from '@/lib/youtubeAnalytics';
+import { CHANNELS, currentYearMonth, shiftYearMonth } from '@/lib/channels';
+import type { Channel, ChannelTrend, MetricChange, TrendGranularity } from '@/types';
 
 interface ChannelPageProps {
   params: Promise<{ channel: string }>;
+  searchParams: Promise<{ granularity?: string; from?: string; to?: string }>;
 }
 
-export default async function ChannelPage({ params }: ChannelPageProps) {
+function defaultRange(granularity: TrendGranularity): { from: string; to: string } {
+  if (granularity === 'day') {
+    const to = new Date().toISOString().slice(0, 10);
+    const from = new Date(Date.now() - 13 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    return { from, to };
+  }
+  const to = currentYearMonth();
+  const from = shiftYearMonth(to, -5);
+  return { from, to };
+}
+
+export default async function ChannelPage({ params, searchParams }: ChannelPageProps) {
   const { channel: channelParam } = await params;
   if (!CHANNELS.includes(channelParam as Channel)) notFound();
   const channel = channelParam as Channel;
 
+  const query = await searchParams;
+  const granularity: TrendGranularity = query.granularity === 'day' && channel === 'youtube' ? 'day' : 'month';
+  const defaults = defaultRange(granularity);
+  const from = query.from ?? defaults.from;
+  const to = query.to ?? defaults.to;
+
   const yearMonth = currentYearMonth();
   const dashboard = getDashboardData(yearMonth);
   const card = dashboard.cards.find((c) => c.channel === channel)!;
-  const trend = getChannelTrend(channel);
+
+  let trend: ChannelTrend;
+  let trendError: string | null = null;
+  if (granularity === 'day') {
+    try {
+      trend = await getYoutubeDailyTrend(from, to);
+    } catch (e) {
+      trendError = e instanceof Error ? e.message : '일별 데이터를 가져오지 못했습니다.';
+      trend = { channel, label: card.label, granularity: 'day', periods: [], series: [] };
+    }
+  } else {
+    trend = getChannelTrend(channel, from, to);
+  }
 
   return (
     <div className="max-w-3xl">
@@ -36,6 +69,8 @@ export default async function ChannelPage({ params }: ChannelPageProps) {
         {channel !== 'naver_blog' && <CollectButton channel={channel} />}
       </div>
 
+      {channel === 'youtube' && <YoutubeOAuthPanel />}
+
       <Card title="이번 달 지표">
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           {card.metrics.map((metric) => (
@@ -44,19 +79,32 @@ export default async function ChannelPage({ params }: ChannelPageProps) {
               <div className="text-lg font-semibold text-[#0a0a0a]">
                 {metric.change.current !== null ? metric.change.current.toLocaleString() : '—'}
               </div>
+              <div className="text-[10px] text-[#999] mb-0.5">전월 대비</div>
               <ChangeBadge change={metric.change} />
             </div>
           ))}
         </div>
       </Card>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-        {trend.series.map((series) => (
-          <Card key={series.key}>
-            <TrendChart label={series.label} points={series.points} />
-          </Card>
-        ))}
+      <div className="mt-4">
+        <TrendRangeControls channel={channel} granularity={granularity} from={from} to={to} />
       </div>
+
+      {trendError && (
+        <Card>
+          <div className="text-sm text-[#999]">{trendError}</div>
+        </Card>
+      )}
+
+      {!trendError && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {trend.series.map((series) => (
+            <Card key={series.key}>
+              <TrendChart label={series.label} points={series.points} granularity={granularity} />
+            </Card>
+          ))}
+        </div>
+      )}
 
       {channel === 'youtube' && <YoutubeContentList />}
     </div>

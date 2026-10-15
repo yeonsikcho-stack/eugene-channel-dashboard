@@ -5,6 +5,7 @@ import {
   CHANNEL_METRIC_DEFS,
   computeChange,
   currentYearMonth,
+  monthsBetween,
   shiftYearMonth,
 } from '@/lib/channels';
 import type {
@@ -60,13 +61,11 @@ export function getDashboardData(yearMonth: string = currentYearMonth()): Dashbo
   return { yearMonth, previousYearMonth, cards };
 }
 
-export function getChannelTrend(channel: Channel, monthsBack = 6): ChannelTrend {
-  const end = currentYearMonth();
-  const start = shiftYearMonth(end, -(monthsBack - 1));
+export function getChannelTrend(channel: Channel, fromMonth?: string, toMonth?: string): ChannelTrend {
+  const end = toMonth ?? currentYearMonth();
+  const start = fromMonth ?? shiftYearMonth(end, -5);
   const rows = getTrend(channel, start, end);
-
-  const months: string[] = [];
-  for (let i = 0; i < monthsBack; i++) months.push(shiftYearMonth(start, i));
+  const periods = monthsBetween(start, end);
 
   const byMetric = new Map<string, Map<string, number>>();
   for (const row of rows) {
@@ -77,10 +76,10 @@ export function getChannelTrend(channel: Channel, monthsBack = 6): ChannelTrend 
   const series = CHANNEL_METRIC_DEFS[channel].map((def) => ({
     key: def.key,
     label: def.label,
-    points: months.map((month) => ({ month, value: byMetric.get(def.key)?.get(month) ?? null })),
+    points: periods.map((period) => ({ key: period, value: byMetric.get(def.key)?.get(period) ?? null })),
   }));
 
-  return { channel, label: CHANNEL_LABELS[channel], months, series };
+  return { channel, label: CHANNEL_LABELS[channel], granularity: 'month', periods, series };
 }
 
 export function getTrend(channel: string, fromMonth: string, toMonth: string): ChannelMetricRow[] {

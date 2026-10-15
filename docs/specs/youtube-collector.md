@@ -1,5 +1,9 @@
 # Spec — youtube-collector
 
+## Status: 시청시간(OAuth) 범위 축소됨
+
+구독자수·조회수(API 키 방식)는 구현되어 실제로 동작 중이다. 시청시간(OAuth + YouTube Analytics API)은 실제로 연결까지는 성공했으나, Analytics API 리포트 호출이 계속 400 오류를 반환해 담당자와 상의 후 포기했다 (2026-10-15). 과거 월 데이터를 Analytics API로 복원하려던 backfill 기능도 같은 이유로 함께 제거했다. 관련 코드(`lib/oauth.ts`, `lib/youtubeOAuth.ts`, `lib/youtubeAnalytics.ts`, `lib/youtubeBackfill.ts`, `/api/auth/youtube/*`, `/api/collectors/youtube/backfill`)는 삭제했고, `시청시간`은 더 이상 지표 목록에 없다. 아래 시청시간 관련 내용은 추후 재시도 시 참고용으로만 남겨둔다.
+
 ## Problem Statement
 
 담당자가 매달 유튜브 채널 관리자 페이지에 로그인해 구독자수·조회수·시청시간을 눈으로 확인하고 엑셀에 옮겨 적는다. 이 세 지표는 담당자가 직접 보지 않아도 매번 같은 방식으로 확인할 수 있는 숫자인데도, 로그인·클릭·기록을 매달 반복한다.

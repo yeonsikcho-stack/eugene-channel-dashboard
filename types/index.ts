@@ -56,17 +56,51 @@ export interface UpsertMetricResult {
   skippedReason?: 'manual_override';
 }
 
+export type TrendGranularity = 'month' | 'day';
+
+export interface TrendPoint {
+  key: string;
+  value: number | null;
+}
+
 export interface TrendSeries {
   key: string;
   label: string;
-  points: { month: string; value: number | null }[];
+  points: TrendPoint[];
 }
 
 export interface ChannelTrend {
   channel: Channel;
   label: string;
-  months: string[];
+  granularity: TrendGranularity;
+  periods: string[];
   series: TrendSeries[];
+}
+
+export type OAuthStatus = 'connected' | 'disconnected' | 'error';
+
+export interface OAuthConnection {
+  provider: string;
+  refreshToken: string;
+  accessToken: string | null;
+  tokenExpiresAt: string | null;
+  status: OAuthStatus;
+  lastError: string | null;
+  connectedAt: string;
+}
+
+export interface YoutubeMonthlyAnalytics {
+  month: string;
+  views: number;
+  subscribersGained: number;
+  subscribersLost: number;
+}
+
+export interface YoutubeDailyAnalytics {
+  date: string;
+  views: number;
+  subscribersGained: number;
+  subscribersLost: number;
 }
 
 export interface YoutubeVideoSummary {

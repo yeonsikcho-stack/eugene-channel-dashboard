@@ -4,7 +4,8 @@ import { useRef, useState } from 'react';
 
 interface TrendChartProps {
   label: string;
-  points: { month: string; value: number | null }[];
+  points: { key: string; value: number | null }[];
+  granularity?: 'month' | 'day';
 }
 
 const SERIES_COLOR = '#2a78d6';
@@ -12,7 +13,11 @@ const WIDTH = 320;
 const HEIGHT = 120;
 const PADDING = { top: 16, right: 12, bottom: 20, left: 40 };
 
-export function TrendChart({ label, points }: TrendChartProps) {
+function formatAxisLabel(key: string, granularity: 'month' | 'day') {
+  return granularity === 'day' ? key.slice(5).replace('-', '/') : `${key.slice(5)}월`;
+}
+
+export function TrendChart({ label, points, granularity = 'month' }: TrendChartProps) {
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
   const [showTable, setShowTable] = useState(false);
   const svgRef = useRef<SVGSVGElement>(null);
@@ -58,6 +63,8 @@ export function TrendChart({ label, points }: TrendChartProps) {
 
   const gridValues = hasData ? [minValue, (minValue + maxValue) / 2, maxValue] : [];
   const hovered = hoverIndex !== null ? points[hoverIndex] : null;
+  const markerRadius = points.length > 40 ? 2 : 4;
+  const labelEvery = Math.max(1, Math.ceil(points.length / 7));
 
   return (
     <div>
@@ -123,7 +130,15 @@ export function TrendChart({ label, points }: TrendChartProps) {
 
           {points.map((p, i) =>
             p.value !== null ? (
-              <circle key={i} cx={xFor(i)} cy={yFor(p.value)} r={4} fill={SERIES_COLOR} stroke="#fff" strokeWidth={2} />
+              <circle
+                key={i}
+                cx={xFor(i)}
+                cy={yFor(p.value)}
+                r={markerRadius}
+                fill={SERIES_COLOR}
+                stroke="#fff"
+                strokeWidth={markerRadius > 2 ? 2 : 1}
+              />
             ) : null,
           )}
 
@@ -140,11 +155,13 @@ export function TrendChart({ label, points }: TrendChartProps) {
             </text>
           )}
 
-          {points.map((p, i) => (
-            <text key={i} x={xFor(i)} y={HEIGHT - 4} textAnchor="middle" fontSize={8} fill="#999">
-              {p.month.slice(5)}월
-            </text>
-          ))}
+          {points.map((p, i) =>
+            i % labelEvery === 0 || i === points.length - 1 ? (
+              <text key={i} x={xFor(i)} y={HEIGHT - 4} textAnchor="middle" fontSize={8} fill="#999">
+                {formatAxisLabel(p.key, granularity)}
+              </text>
+            ) : null,
+          )}
 
           {hoverIndex !== null && (
             <line
@@ -163,14 +180,14 @@ export function TrendChart({ label, points }: TrendChartProps) {
         <table className="w-full text-xs">
           <thead>
             <tr className="text-[#999]">
-              <th className="text-left font-normal py-1">월</th>
+              <th className="text-left font-normal py-1">{granularity === 'day' ? '날짜' : '월'}</th>
               <th className="text-right font-normal py-1">값</th>
             </tr>
           </thead>
           <tbody>
             {points.map((p) => (
-              <tr key={p.month} className="border-t border-gray-100">
-                <td className="py-1">{p.month}</td>
+              <tr key={p.key} className="border-t border-gray-100">
+                <td className="py-1">{p.key}</td>
                 <td className="py-1 text-right tabular-nums">
                   {p.value !== null ? p.value.toLocaleString() : '—'}
                 </td>
@@ -184,7 +201,7 @@ export function TrendChart({ label, points }: TrendChartProps) {
         <div className="mt-1 text-xs text-[#555] h-4">
           {hovered && (
             <>
-              {hovered.month}:{' '}
+              {hovered.key}:{' '}
               <span className="font-medium text-[#0a0a0a]">
                 {hovered.value !== null ? hovered.value.toLocaleString() : '데이터 없음'}
               </span>
