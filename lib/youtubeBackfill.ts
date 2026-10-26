@@ -27,7 +27,10 @@ export async function backfillYoutubeHistory(startMonth: string) {
 
   let cumulativeSubscribers = snapshot.subscribers;
 
-  const results: Record<string, { subscribers: UpsertMetricResult; views: UpsertMetricResult }> = {};
+  const results: Record<
+    string,
+    { subscribers: UpsertMetricResult; views: UpsertMetricResult; likes: UpsertMetricResult; comments: UpsertMetricResult }
+  > = {};
 
   for (const row of byMonthDesc) {
     results[row.month] = {
@@ -43,6 +46,20 @@ export async function backfillYoutubeHistory(startMonth: string) {
         metricKey: 'views',
         yearMonth: row.month,
         value: row.views,
+        source: 'auto',
+      }),
+      likes: upsertMetric({
+        channel: 'youtube',
+        metricKey: 'likes',
+        yearMonth: row.month,
+        value: row.likes,
+        source: 'auto',
+      }),
+      comments: upsertMetric({
+        channel: 'youtube',
+        metricKey: 'comments',
+        yearMonth: row.month,
+        value: row.comments,
         source: 'auto',
       }),
     };

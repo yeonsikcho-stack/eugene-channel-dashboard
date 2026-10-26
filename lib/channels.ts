@@ -22,11 +22,15 @@ export const CHANNEL_METRIC_DEFS: Record<Channel, MetricDef[]> = {
   youtube: [
     { key: 'subscribers', label: '구독자수' },
     { key: 'views', label: '조회수' },
+    { key: 'likes', label: '좋아요' },
+    { key: 'comments', label: '댓글수' },
   ],
   instagram: [
     { key: 'followers', label: '팔로워' },
     { key: 'reach', label: '도달수' },
     { key: 'saves', label: '저장수' },
+    { key: 'likes', label: '좋아요' },
+    { key: 'comments', label: '댓글수' },
   ],
   naver_blog: [
     { key: 'views', label: '조회수' },

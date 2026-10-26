@@ -93,6 +93,8 @@ export interface OAuthConnection {
 export interface YoutubeMonthlyAnalytics {
   month: string;
   views: number;
+  likes: number;
+  comments: number;
   subscribersGained: number;
   subscribersLost: number;
 }
@@ -100,6 +102,8 @@ export interface YoutubeMonthlyAnalytics {
 export interface YoutubeDailyAnalytics {
   date: string;
   views: number;
+  likes: number;
+  comments: number;
   subscribersGained: number;
   subscribersLost: number;
 }

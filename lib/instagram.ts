@@ -1,4 +1,6 @@
 import { getValidInstagramAccess } from '@/lib/instagramOAuth';
+import { fetchInstagramMonthlyEngagement } from '@/lib/instagramMedia';
+import { currentYearMonth } from '@/lib/channels';
 
 const GRAPH_VERSION = 'v21.0';
 
@@ -35,8 +37,14 @@ export async function fetchInstagramSnapshot(): Promise<Record<string, number>> 
   const reachValues: { value: number }[] = insights.data?.[0]?.values ?? [];
   const reach = reachValues.reduce((sum, v) => sum + v.value, 0);
 
+  const thisMonth = currentYearMonth();
+  const engagement = await fetchInstagramMonthlyEngagement(thisMonth);
+  const thisMonthEngagement = engagement.find((e) => e.month === thisMonth);
+
   return {
     followers: profile.followers_count,
     reach,
+    likes: thisMonthEngagement?.likeCount ?? 0,
+    comments: thisMonthEngagement?.commentsCount ?? 0,
   };
 }
