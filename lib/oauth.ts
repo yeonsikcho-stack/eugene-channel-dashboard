@@ -6,6 +6,7 @@ interface OAuthConnectionRecord {
   refresh_token: string;
   access_token: string | null;
   token_expires_at: string | null;
+  external_id: string | null;
   status: OAuthStatus;
   last_error: string | null;
   connected_at: string;
@@ -17,6 +18,7 @@ function toConnection(record: OAuthConnectionRecord): OAuthConnection {
     refreshToken: record.refresh_token,
     accessToken: record.access_token,
     tokenExpiresAt: record.token_expires_at,
+    externalId: record.external_id,
     status: record.status,
     lastError: record.last_error,
     connectedAt: record.connected_at,
@@ -36,15 +38,17 @@ export function saveOAuthConnection(input: {
   refreshToken: string;
   accessToken: string | null;
   tokenExpiresAt: string | null;
+  externalId?: string | null;
 }): void {
   const db = getDB();
   db.prepare(
-    `INSERT INTO oauth_connections (provider, refresh_token, access_token, token_expires_at, status, last_error, connected_at)
-     VALUES (@provider, @refresh_token, @access_token, @token_expires_at, 'connected', NULL, datetime('now', 'localtime'))
+    `INSERT INTO oauth_connections (provider, refresh_token, access_token, token_expires_at, external_id, status, last_error, connected_at)
+     VALUES (@provider, @refresh_token, @access_token, @token_expires_at, @external_id, 'connected', NULL, datetime('now', 'localtime'))
      ON CONFLICT (provider) DO UPDATE SET
        refresh_token = excluded.refresh_token,
        access_token = excluded.access_token,
        token_expires_at = excluded.token_expires_at,
+       external_id = excluded.external_id,
        status = 'connected',
        last_error = NULL,
        connected_at = excluded.connected_at`,
@@ -53,6 +57,7 @@ export function saveOAuthConnection(input: {
     refresh_token: input.refreshToken,
     access_token: input.accessToken,
     token_expires_at: input.tokenExpiresAt,
+    external_id: input.externalId ?? null,
   });
 }
 

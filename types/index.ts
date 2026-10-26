@@ -84,6 +84,7 @@ export interface OAuthConnection {
   refreshToken: string;
   accessToken: string | null;
   tokenExpiresAt: string | null;
+  externalId: string | null;
   status: OAuthStatus;
   lastError: string | null;
   connectedAt: string;

@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/Card';
 import { TrendChart } from '@/components/TrendChart';
 import { CollectButton } from '@/components/CollectButton';
 import { YoutubeOAuthPanel } from '@/components/YoutubeOAuthPanel';
+import { InstagramConnectPanel } from '@/components/InstagramConnectPanel';
 import { TrendRangeControls } from '@/components/TrendRangeControls';
 import { getChannelTrend, getDashboardData } from '@/lib/metrics';
 import { fetchYoutubeRecentVideos } from '@/lib/youtube';
@@ -70,6 +71,7 @@ export default async function ChannelPage({ params, searchParams }: ChannelPageP
       </div>
 
       {channel === 'youtube' && <YoutubeOAuthPanel />}
+      {channel === 'instagram' && <InstagramConnectPanel />}
 
       <Card title="이번 달 지표">
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">

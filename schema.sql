@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS oauth_connections (
   refresh_token TEXT NOT NULL,
   access_token TEXT,
   token_expires_at TEXT,
+  external_id TEXT,
   status TEXT NOT NULL DEFAULT 'connected',
   last_error TEXT,
   connected_at TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
