@@ -29,12 +29,12 @@ interface MetricRecord {
   collected_at: string;
 }
 
-export function getDashboardData(yearMonth: string = currentYearMonth()): DashboardData {
+export function getDashboardData(yearMonth: string = currentYearMonth(), compareMonth?: string): DashboardData {
   const db = getDB();
   const stmt = db.prepare(
     `SELECT * FROM channel_metrics WHERE channel = ? AND metric_key = ? AND year_month = ?`,
   );
-  const previousYearMonth = shiftYearMonth(yearMonth, -1);
+  const previousYearMonth = compareMonth ?? shiftYearMonth(yearMonth, -1);
 
   const cards: ChannelCard[] = CHANNELS.map((channel) => ({
     channel,

@@ -46,7 +46,7 @@ export function Sparkline({ points }: { points: (number | null)[] }) {
         />
       ))}
       {lastIndex !== undefined && coords[lastIndex] && (
-        <circle cx={coords[lastIndex]!.x} cy={coords[lastIndex]!.y} r={2.5} fill="#2a78d6" />
+        <circle cx={coords[lastIndex]!.x} cy={coords[lastIndex]!.y} r={2.5} fill="#2451e0" />
       )}
     </svg>
   );

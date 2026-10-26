@@ -1,6 +1,6 @@
 import type { Channel, MetricChange, MetricDirection } from '@/types';
 
-export const CHANNELS: Channel[] = ['online_sabo', 'youtube', 'instagram', 'naver_blog'];
+export const CHANNELS: Channel[] = ['youtube', 'instagram', 'naver_blog', 'online_sabo'];
 
 export const CHANNEL_LABELS: Record<Channel, string> = {
   online_sabo: '유진에버',

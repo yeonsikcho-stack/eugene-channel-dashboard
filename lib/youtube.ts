@@ -33,6 +33,54 @@ export async function fetchYoutubeSnapshot(): Promise<YoutubeSnapshot> {
   };
 }
 
+export async function fetchYoutubeMonthlyUploadCount(month: string): Promise<number> {
+  const apiKey = process.env.YOUTUBE_API_KEY;
+  const channelId = process.env.YOUTUBE_CHANNEL_ID;
+
+  if (!apiKey || !channelId) {
+    throw new Error('YOUTUBE_API_KEY 또는 YOUTUBE_CHANNEL_ID가 설정되지 않았습니다.');
+  }
+
+  const channelUrl = `https://www.googleapis.com/youtube/v3/channels?part=contentDetails&id=${channelId}&key=${apiKey}`;
+  const channelRes = await fetch(channelUrl);
+  if (!channelRes.ok) throw new Error(`YouTube API 요청 실패: ${channelRes.status}`);
+  const channelData = await channelRes.json();
+  const uploadsPlaylistId = channelData.items?.[0]?.contentDetails?.relatedPlaylists?.uploads;
+  if (!uploadsPlaylistId) throw new Error('업로드 재생목록을 찾을 수 없습니다.');
+
+  let count = 0;
+  let pageToken = '';
+  for (let page = 0; page < 10; page++) {
+    const params = new URLSearchParams({
+      part: 'snippet',
+      playlistId: uploadsPlaylistId,
+      maxResults: '50',
+      key: apiKey,
+    });
+    if (pageToken) params.set('pageToken', pageToken);
+
+    const playlistRes = await fetch(`https://www.googleapis.com/youtube/v3/playlistItems?${params.toString()}`);
+    if (!playlistRes.ok) throw new Error(`YouTube API 요청 실패: ${playlistRes.status}`);
+    const playlistData = await playlistRes.json();
+    const items: { snippet: { publishedAt: string } }[] = playlistData.items ?? [];
+
+    let passedStart = false;
+    for (const item of items) {
+      const itemMonth = item.snippet.publishedAt.slice(0, 7);
+      if (itemMonth < month) {
+        passedStart = true;
+        continue;
+      }
+      if (itemMonth === month) count += 1;
+    }
+
+    if (passedStart || !playlistData.nextPageToken) break;
+    pageToken = playlistData.nextPageToken;
+  }
+
+  return count;
+}
+
 export async function fetchYoutubeRecentVideos(limit = 8): Promise<YoutubeVideoSummary[]> {
   const apiKey = process.env.YOUTUBE_API_KEY;
   const channelId = process.env.YOUTUBE_CHANNEL_ID;

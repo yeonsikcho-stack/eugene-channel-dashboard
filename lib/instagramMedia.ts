@@ -7,6 +7,7 @@ export interface InstagramMediaStat {
   month: string;
   likeCount: number;
   commentsCount: number;
+  postCount: number;
 }
 
 /**
@@ -20,7 +21,7 @@ export interface InstagramMediaStat {
 export async function fetchInstagramMonthlyEngagement(sinceMonth: string): Promise<InstagramMediaStat[]> {
   const { accessToken } = await getValidInstagramAccess();
 
-  const byMonth = new Map<string, { likeCount: number; commentsCount: number }>();
+  const byMonth = new Map<string, { likeCount: number; commentsCount: number; postCount: number }>();
   let url: string | null = `https://graph.instagram.com/${GRAPH_VERSION}/me/media?${new URLSearchParams({
     fields: 'timestamp,like_count,comments_count',
     limit: '50',
@@ -42,9 +43,10 @@ export async function fetchInstagramMonthlyEngagement(sinceMonth: string): Promi
         passedStart = true;
         continue;
       }
-      const entry = byMonth.get(month) ?? { likeCount: 0, commentsCount: 0 };
+      const entry = byMonth.get(month) ?? { likeCount: 0, commentsCount: 0, postCount: 0 };
       entry.likeCount += item.like_count ?? 0;
       entry.commentsCount += item.comments_count ?? 0;
+      entry.postCount += 1;
       byMonth.set(month, entry);
     }
 
@@ -54,5 +56,10 @@ export async function fetchInstagramMonthlyEngagement(sinceMonth: string): Promi
 
   return [...byMonth.entries()]
     .sort(([a], [b]) => (a < b ? -1 : 1))
-    .map(([month, stats]) => ({ month, likeCount: stats.likeCount, commentsCount: stats.commentsCount }));
+    .map(([month, stats]) => ({
+      month,
+      likeCount: stats.likeCount,
+      commentsCount: stats.commentsCount,
+      postCount: stats.postCount,
+    }));
 }

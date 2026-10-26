@@ -8,7 +8,7 @@ interface TrendChartProps {
   granularity?: 'month' | 'day';
 }
 
-const SERIES_COLOR = '#2a78d6';
+const SERIES_COLOR = '#2451e0';
 const WIDTH = 320;
 const HEIGHT = 120;
 const PADDING = { top: 16, right: 12, bottom: 20, left: 40 };
