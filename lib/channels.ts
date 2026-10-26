@@ -3,7 +3,7 @@ import type { Channel, MetricChange, MetricDirection } from '@/types';
 export const CHANNELS: Channel[] = ['online_sabo', 'youtube', 'instagram', 'naver_blog'];
 
 export const CHANNEL_LABELS: Record<Channel, string> = {
-  online_sabo: '온라인사보',
+  online_sabo: '유진에버',
   youtube: '유튜브',
   instagram: '인스타그램',
   naver_blog: '네이버 블로그',
