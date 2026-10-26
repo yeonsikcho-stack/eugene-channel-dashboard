@@ -1,6 +1,6 @@
-import { getDashboardData } from '@/lib/metrics';
-import { computeChange, shiftYearMonth } from '@/lib/channels';
-import { fetchYoutubeMonthlyUploadCount } from '@/lib/youtube';
+import { getDashboardData, getTrend } from '@/lib/metrics';
+import { computeChange, currentYearMonth, monthsBetween, shiftYearMonth } from '@/lib/channels';
+import { fetchYoutubeMonthlyUploadCount, fetchYoutubeMonthlyUploadCounts } from '@/lib/youtube';
 import { fetchInstagramMonthlyEngagement } from '@/lib/instagramMedia';
 import type { MetricChange } from '@/types';
 
@@ -131,6 +131,80 @@ export async function getOverviewSummary(yearMonth: string, compareMonth?: strin
   const improvements = buildImprovements(ranked);
 
   return { yearMonth, compareMonth: resolvedCompareMonth, tiles, insights, strengths, improvements };
+}
+
+export interface OverviewTrend {
+  months: string[];
+  content: (number | null)[];
+  reach: (number | null)[];
+  engagement: (number | null)[];
+  audience: (number | null)[];
+}
+
+function sumStoredMetricTrend(months: string[], picks: { channel: string; metricKey: string }[]): (number | null)[] {
+  const maps = picks.map((pick) => {
+    const rows = getTrend(pick.channel, months[0], months[months.length - 1]);
+    return new Map(rows.filter((r) => r.metricKey === pick.metricKey).map((r) => [r.yearMonth, r.value]));
+  });
+
+  return months.map((month) => {
+    let found = false;
+    let sum = 0;
+    for (const map of maps) {
+      const value = map.get(month);
+      if (value !== undefined) {
+        found = true;
+        sum += value;
+      }
+    }
+    return found ? sum : null;
+  });
+}
+
+async function getContentCountTrend(months: string[]): Promise<(number | null)[]> {
+  const sinceMonth = months[0];
+  const [youtubeCounts, instagramRows] = await Promise.allSettled([
+    fetchYoutubeMonthlyUploadCounts(sinceMonth),
+    fetchInstagramMonthlyEngagement(sinceMonth),
+  ]);
+
+  const ytMap = youtubeCounts.status === 'fulfilled' ? youtubeCounts.value : new Map<string, number>();
+  const igMap = new Map(
+    (instagramRows.status === 'fulfilled' ? instagramRows.value : []).map((r) => [r.month, r.postCount]),
+  );
+  const anyAvailable = youtubeCounts.status === 'fulfilled' || instagramRows.status === 'fulfilled';
+  if (!anyAvailable) return months.map(() => null);
+
+  return months.map((month) => (ytMap.get(month) ?? 0) + (igMap.get(month) ?? 0));
+}
+
+export async function getOverviewTrend(monthsBack = 6): Promise<OverviewTrend> {
+  const end = currentYearMonth();
+  const start = shiftYearMonth(end, -(monthsBack - 1));
+  const months = monthsBetween(start, end);
+
+  const [content] = await Promise.all([getContentCountTrend(months)]);
+
+  return {
+    months,
+    content,
+    reach: sumStoredMetricTrend(months, [
+      { channel: 'youtube', metricKey: 'views' },
+      { channel: 'instagram', metricKey: 'reach' },
+      { channel: 'online_sabo', metricKey: 'views' },
+      { channel: 'naver_blog', metricKey: 'views' },
+    ]),
+    engagement: sumStoredMetricTrend(months, [
+      { channel: 'youtube', metricKey: 'likes' },
+      { channel: 'youtube', metricKey: 'comments' },
+      { channel: 'instagram', metricKey: 'likes' },
+      { channel: 'instagram', metricKey: 'comments' },
+    ]),
+    audience: sumStoredMetricTrend(months, [
+      { channel: 'youtube', metricKey: 'subscribers' },
+      { channel: 'instagram', metricKey: 'followers' },
+    ]),
+  };
 }
 
 function getRankedChanges(dashboard: ReturnType<typeof getDashboardData>): RankedChange[] {

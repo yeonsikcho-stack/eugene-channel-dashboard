@@ -7,7 +7,7 @@ import { CollectAllButton } from '@/components/CollectAllButton';
 import { Sparkline } from '@/components/Sparkline';
 import { PeriodControls } from '@/components/PeriodControls';
 import { getChannelTrend, getDashboardData } from '@/lib/metrics';
-import { getOverviewSummary, type OverviewTile } from '@/lib/overview';
+import { getOverviewSummary, getOverviewTrend, type OverviewTile, type OverviewTrend } from '@/lib/overview';
 import { currentYearMonth, shiftYearMonth } from '@/lib/channels';
 import type { Channel, MetricCardItem, MetricChange } from '@/types';
 
@@ -29,12 +29,12 @@ export default async function HomePage({ searchParams }: HomePageProps) {
 
   const data = getDashboardData(yearMonth, compareMonth);
 
-  let summary: Awaited<ReturnType<typeof getOverviewSummary>> | null = null;
-  try {
-    summary = await getOverviewSummary(yearMonth, compareMonth);
-  } catch {
-    summary = null;
-  }
+  const [summaryResult, trendResult] = await Promise.allSettled([
+    getOverviewSummary(yearMonth, compareMonth),
+    getOverviewTrend(),
+  ]);
+  const summary = summaryResult.status === 'fulfilled' ? summaryResult.value : null;
+  const overviewTrend = trendResult.status === 'fulfilled' ? trendResult.value : null;
 
   return (
     <div>
@@ -101,10 +101,10 @@ export default async function HomePage({ searchParams }: HomePageProps) {
 
       {summary && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <KpiTile tile={summary.tiles.content} />
-          <KpiTile tile={summary.tiles.reach} />
-          <KpiTile tile={summary.tiles.engagement} />
-          <KpiTile tile={summary.tiles.audience} />
+          <KpiTile tile={summary.tiles.content} sparklinePoints={overviewTrend?.content ?? []} />
+          <KpiTile tile={summary.tiles.reach} sparklinePoints={overviewTrend?.reach ?? []} />
+          <KpiTile tile={summary.tiles.engagement} sparklinePoints={overviewTrend?.engagement ?? []} />
+          <KpiTile tile={summary.tiles.audience} sparklinePoints={overviewTrend?.audience ?? []} />
         </div>
       )}
 
@@ -154,10 +154,13 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   );
 }
 
-function KpiTile({ tile }: { tile: OverviewTile }) {
+function KpiTile({ tile, sparklinePoints }: { tile: OverviewTile; sparklinePoints: (number | null)[] }) {
   return (
     <div className="bg-white rounded-xl border border-[var(--border)] p-5 shadow-[0_1px_2px_rgba(20,22,31,0.04)]">
-      <div className="text-[11px] text-[var(--ink-muted)] tracking-wide uppercase mb-2">{tile.label}</div>
+      <div className="flex items-start justify-between gap-2">
+        <div className="text-[11px] text-[var(--ink-muted)] tracking-wide uppercase mb-2">{tile.label}</div>
+        <Sparkline points={sparklinePoints} />
+      </div>
       <div className="text-[28px] font-semibold text-[var(--ink)] tabular-nums leading-none mb-2.5">
         {tile.current.toLocaleString()}
       </div>

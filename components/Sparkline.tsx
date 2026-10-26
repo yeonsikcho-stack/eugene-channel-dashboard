@@ -34,6 +34,12 @@ export function Sparkline({ points }: { points: (number | null)[] }) {
 
   return (
     <svg width={WIDTH} height={HEIGHT} viewBox={`0 0 ${WIDTH} ${HEIGHT}`} className="overflow-visible flex-shrink-0">
+      {segments.map((segment, i) => {
+        const areaD =
+          segment.map((p, j) => `${j === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ') +
+          ` L${segment[segment.length - 1].x},${HEIGHT} L${segment[0].x},${HEIGHT} Z`;
+        return <path key={`area-${i}`} d={areaD} fill="#2451e0" fillOpacity={0.08} stroke="none" />;
+      })}
       {segments.map((segment, i) => (
         <path
           key={i}

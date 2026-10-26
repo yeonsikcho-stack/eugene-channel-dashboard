@@ -65,6 +65,44 @@ export async function fetchYoutubeSnapshot(): Promise<YoutubeSnapshot> {
   };
 }
 
+/** `sinceMonth`부터 지금까지, 달별 업로드 개수를 한 번의 페이지네이션으로 집계한다. */
+export async function fetchYoutubeMonthlyUploadCounts(sinceMonth: string): Promise<Map<string, number>> {
+  const { apiKey, channelId } = requireYoutubeEnv();
+  const uploadsPlaylistId = await getUploadsPlaylistId(apiKey, channelId);
+
+  const counts = new Map<string, number>();
+  let pageToken = '';
+  for (let page = 0; page < 10; page++) {
+    const params = new URLSearchParams({
+      part: 'snippet',
+      playlistId: uploadsPlaylistId,
+      maxResults: '50',
+      key: apiKey,
+    });
+    if (pageToken) params.set('pageToken', pageToken);
+
+    const playlistRes = await fetch(`https://www.googleapis.com/youtube/v3/playlistItems?${params.toString()}`);
+    if (!playlistRes.ok) throw new Error(`YouTube API 요청 실패: ${playlistRes.status}`);
+    const playlistData = await playlistRes.json();
+    const items: { snippet: { publishedAt: string } }[] = playlistData.items ?? [];
+
+    let passedStart = false;
+    for (const item of items) {
+      const itemMonth = item.snippet.publishedAt.slice(0, 7);
+      if (itemMonth < sinceMonth) {
+        passedStart = true;
+        continue;
+      }
+      counts.set(itemMonth, (counts.get(itemMonth) ?? 0) + 1);
+    }
+
+    if (passedStart || !playlistData.nextPageToken) break;
+    pageToken = playlistData.nextPageToken;
+  }
+
+  return counts;
+}
+
 export async function fetchYoutubeMonthlyUploadCount(month: string): Promise<number> {
   const { apiKey, channelId } = requireYoutubeEnv();
   const uploadsPlaylistId = await getUploadsPlaylistId(apiKey, channelId);

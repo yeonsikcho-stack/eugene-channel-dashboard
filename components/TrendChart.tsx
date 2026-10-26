@@ -116,6 +116,14 @@ export function TrendChart({ label, points, granularity = 'month' }: TrendChartP
             </text>
           ))}
 
+          {segments.map((segment, si) => {
+            const baselineY = PADDING.top + plotHeight;
+            const areaD =
+              segment.map((pt, i) => `${i === 0 ? 'M' : 'L'}${pt.x},${pt.y}`).join(' ') +
+              ` L${segment[segment.length - 1].x},${baselineY} L${segment[0].x},${baselineY} Z`;
+            return <path key={`area-${si}`} d={areaD} fill={SERIES_COLOR} fillOpacity={0.1} stroke="none" />;
+          })}
+
           {segments.map((segment, si) => (
             <path
               key={si}
