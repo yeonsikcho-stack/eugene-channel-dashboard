@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { notFound } from 'next/navigation';
+import { ExternalLink } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
 import { Card } from '@/components/ui/Card';
 import { TrendChart } from '@/components/TrendChart';
@@ -11,9 +12,15 @@ import { TrendRangeControls } from '@/components/TrendRangeControls';
 import { getChannelTrend, getDashboardData } from '@/lib/metrics';
 import { fetchYoutubeVideosForMonth } from '@/lib/youtube';
 import { fetchInstagramPostsForMonth, type InstagramPost } from '@/lib/instagramMedia';
-import { analyzeInstagramPosts, analyzeYoutubeVideos } from '@/lib/contentInsights';
+import {
+  analyzeInstagramPosts,
+  analyzeYoutubeVideos,
+  youtubeWatchUrl,
+  type InstagramContentAnalysis,
+  type YoutubeContentAnalysis,
+} from '@/lib/contentInsights';
 import { getYoutubeDailyTrend } from '@/lib/youtubeAnalytics';
-import { CHANNELS, currentYearMonth, shiftYearMonth } from '@/lib/channels';
+import { CHANNELS, computeChange, currentYearMonth, shiftYearMonth } from '@/lib/channels';
 import type { Channel, ChannelTrend, MetricChange, TrendGranularity, YoutubeVideoSummary } from '@/types';
 
 interface ChannelPageProps {
@@ -119,14 +126,23 @@ export default async function ChannelPage({ params, searchParams }: ChannelPageP
 
 async function YoutubeContentSection({ yearMonth }: { yearMonth: string }) {
   let videos: YoutubeVideoSummary[] = [];
+  let analysis: YoutubeContentAnalysis | null = null;
+  let previousAnalysis: YoutubeContentAnalysis | null = null;
   let error: string | null = null;
   try {
-    videos = await fetchYoutubeVideosForMonth(yearMonth);
+    const previousMonth = shiftYearMonth(yearMonth, -1);
+    const [current, previous] = await Promise.all([
+      fetchYoutubeVideosForMonth(yearMonth),
+      fetchYoutubeVideosForMonth(previousMonth),
+    ]);
+    videos = current;
+    analysis = analyzeYoutubeVideos(current);
+    previousAnalysis = analyzeYoutubeVideos(previous);
   } catch (e) {
     error = e instanceof Error ? e.message : '콘텐츠를 불러오지 못했습니다.';
   }
 
-  if (error) {
+  if (error || !analysis) {
     return (
       <div className="mt-4">
         <Card title={`${yearMonth} 올라온 콘텐츠`}>
@@ -136,7 +152,7 @@ async function YoutubeContentSection({ yearMonth }: { yearMonth: string }) {
     );
   }
 
-  const analysis = analyzeYoutubeVideos(videos);
+  const avgViewsChange = previousAnalysis?.avgViews != null ? computeChange(analysis.avgViews, previousAnalysis.avgViews) : null;
 
   return (
     <div className="mt-4 space-y-4">
@@ -144,8 +160,11 @@ async function YoutubeContentSection({ yearMonth }: { yearMonth: string }) {
         {analysis.count === 0 && <li>이번 달 올라온 영상이 없습니다.</li>}
         {analysis.topByViews && (
           <li>
-            가장 많이 본 영상은 <strong>&lsquo;{analysis.topByViews.title}&rsquo;</strong> — 조회수{' '}
-            {analysis.topByViews.views?.toLocaleString()}회
+            가장 많이 본 영상은{' '}
+            <a href={youtubeWatchUrl(analysis.topByViews)} target="_blank" rel="noopener noreferrer" className="underline decoration-white/30 hover:decoration-white">
+              &lsquo;{analysis.topByViews.title}&rsquo;
+            </a>{' '}
+            — 조회수 {analysis.topByViews.views?.toLocaleString()}회
           </li>
         )}
         {analysis.topByEngagementRate && (
@@ -154,7 +173,14 @@ async function YoutubeContentSection({ yearMonth }: { yearMonth: string }) {
             <strong>&lsquo;{analysis.topByEngagementRate.video.title}&rsquo;</strong> — {analysis.topByEngagementRate.ratePct}%
           </li>
         )}
-        {analysis.avgViews !== null && <li>영상당 평균 조회수는 {analysis.avgViews.toLocaleString()}회입니다.</li>}
+        {analysis.avgViews !== null && (
+          <li>
+            영상당 평균 조회수는 {analysis.avgViews.toLocaleString()}회입니다.
+            {avgViewsChange && avgViewsChange.pct !== null && (
+              <> (전월 대비 {avgViewsChange.pct > 0 ? '+' : ''}{avgViewsChange.pct}%)</>
+            )}
+          </li>
+        )}
         {analysis.avgEngagementRatePct !== null && <li>영상당 평균 참여율은 {analysis.avgEngagementRatePct}%입니다.</li>}
         {analysis.cadenceDays !== null && <li>평균 {analysis.cadenceDays}일에 한 번 업로드되고 있습니다.</li>}
       </ContentInsightBox>
@@ -162,29 +188,29 @@ async function YoutubeContentSection({ yearMonth }: { yearMonth: string }) {
       <Card title={`${yearMonth} 올라온 콘텐츠 (${analysis.count}개)`}>
         {videos.length === 0 && <div className="text-sm text-[var(--ink-muted)]">이번 달 올라온 콘텐츠가 없습니다.</div>}
         {videos.length > 0 && (
-          <div className="space-y-3">
+          <div className="space-y-1">
             {videos.map((video) => (
-              <div key={video.videoId} className="flex gap-3 items-center border-b border-[var(--border-soft)] pb-3 last:border-0 last:pb-0">
+              <a
+                key={video.videoId}
+                href={youtubeWatchUrl(video)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex gap-3 items-center border-b border-[var(--border-soft)] py-2.5 last:border-0 -mx-2 px-2 rounded-md hover:bg-[var(--accent-soft)] transition-colors group"
+              >
                 {video.thumbnailUrl && (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={video.thumbnailUrl} alt={video.title} className="w-20 h-auto rounded-md flex-shrink-0" />
                 )}
                 <div className="flex-1 min-w-0">
                   <div className="text-sm text-[var(--ink)] truncate flex items-center gap-1.5">
-                    {video.title}
-                    {analysis.topByViews?.videoId === video.videoId && (
-                      <Badge color="blue" size="sm">
-                        최고 조회수
-                      </Badge>
-                    )}
-                    {analysis.topByEngagementRate?.video.videoId === video.videoId && (
-                      <Badge color="green" size="sm">
-                        최고 참여율
-                      </Badge>
-                    )}
+                    <span className="truncate">{video.title}</span>
+                    <ExternalLink size={12} className="text-[var(--ink-muted)] opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
                   </div>
-                  <div className="text-xs text-[var(--ink-muted)] mt-0.5">
-                    {new Date(video.publishedAt).toLocaleDateString('ko-KR')}
+                  <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                    <span className="text-xs text-[var(--ink-muted)]">{new Date(video.publishedAt).toLocaleDateString('ko-KR')}</span>
+                    {analysis.topByViews?.videoId === video.videoId && <Badge color="blue" size="sm">최고 조회수</Badge>}
+                    {analysis.topByEngagementRate?.video.videoId === video.videoId && <Badge color="green" size="sm">최고 참여율</Badge>}
+                    {analysis.topByComments?.videoId === video.videoId && <Badge color="purple" size="sm">최다 댓글</Badge>}
                   </div>
                 </div>
                 <div className="text-right text-xs text-[var(--ink-secondary)] flex-shrink-0 space-y-0.5 tabular-nums">
@@ -192,7 +218,7 @@ async function YoutubeContentSection({ yearMonth }: { yearMonth: string }) {
                   <div>좋아요 {video.likes !== null ? video.likes.toLocaleString() : '—'}</div>
                   <div>댓글 {video.comments !== null ? video.comments.toLocaleString() : '—'}</div>
                 </div>
-              </div>
+              </a>
             ))}
           </div>
         )}
@@ -203,14 +229,23 @@ async function YoutubeContentSection({ yearMonth }: { yearMonth: string }) {
 
 async function InstagramContentSection({ yearMonth }: { yearMonth: string }) {
   let posts: InstagramPost[] = [];
+  let analysis: InstagramContentAnalysis | null = null;
+  let previousAnalysis: InstagramContentAnalysis | null = null;
   let error: string | null = null;
   try {
-    posts = await fetchInstagramPostsForMonth(yearMonth);
+    const previousMonth = shiftYearMonth(yearMonth, -1);
+    const [current, previous] = await Promise.all([
+      fetchInstagramPostsForMonth(yearMonth),
+      fetchInstagramPostsForMonth(previousMonth),
+    ]);
+    posts = current;
+    analysis = analyzeInstagramPosts(current);
+    previousAnalysis = analyzeInstagramPosts(previous);
   } catch (e) {
     error = e instanceof Error ? e.message : '콘텐츠를 불러오지 못했습니다.';
   }
 
-  if (error) {
+  if (error || !analysis) {
     return (
       <div className="mt-4">
         <Card title={`${yearMonth} 올라온 콘텐츠`}>
@@ -220,7 +255,8 @@ async function InstagramContentSection({ yearMonth }: { yearMonth: string }) {
     );
   }
 
-  const analysis = analyzeInstagramPosts(posts);
+  const avgEngagementChange =
+    previousAnalysis?.avgEngagement != null ? computeChange(analysis.avgEngagement, previousAnalysis.avgEngagement) : null;
 
   return (
     <div className="mt-4 space-y-4">
@@ -229,43 +265,62 @@ async function InstagramContentSection({ yearMonth }: { yearMonth: string }) {
         {analysis.topByEngagement && (
           <li>
             가장 반응이 좋았던 게시물은{' '}
-            <strong>&lsquo;{captionPreview(analysis.topByEngagement.post.caption)}&rsquo;</strong> — 좋아요{' '}
-            {analysis.topByEngagement.post.likeCount.toLocaleString()}개 · 댓글{' '}
+            <a
+              href={analysis.topByEngagement.post.permalink ?? '#'}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline decoration-white/30 hover:decoration-white"
+            >
+              &lsquo;{captionPreview(analysis.topByEngagement.post.caption)}&rsquo;
+            </a>{' '}
+            — 좋아요 {analysis.topByEngagement.post.likeCount.toLocaleString()}개 · 댓글{' '}
             {analysis.topByEngagement.post.commentsCount.toLocaleString()}개
           </li>
         )}
-        {analysis.avgEngagement !== null && <li>게시물당 평균 참여(좋아요+댓글)는 {analysis.avgEngagement.toLocaleString()}건입니다.</li>}
+        {analysis.avgEngagement !== null && (
+          <li>
+            게시물당 평균 참여(좋아요+댓글)는 {analysis.avgEngagement.toLocaleString()}건입니다.
+            {avgEngagementChange && avgEngagementChange.pct !== null && (
+              <> (전월 대비 {avgEngagementChange.pct > 0 ? '+' : ''}{avgEngagementChange.pct}%)</>
+            )}
+          </li>
+        )}
         {analysis.cadenceDays !== null && <li>평균 {analysis.cadenceDays}일에 한 번 게시되고 있습니다.</li>}
       </ContentInsightBox>
 
       <Card title={`${yearMonth} 올라온 콘텐츠 (${analysis.count}개)`}>
         {posts.length === 0 && <div className="text-sm text-[var(--ink-muted)]">이번 달 올라온 콘텐츠가 없습니다.</div>}
         {posts.length > 0 && (
-          <div className="space-y-3">
+          <div className="space-y-1">
             {posts.map((post) => (
-              <div key={post.id} className="flex gap-3 items-center border-b border-[var(--border-soft)] pb-3 last:border-0 last:pb-0">
+              <a
+                key={post.id}
+                href={post.permalink ?? '#'}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex gap-3 items-center border-b border-[var(--border-soft)] py-2.5 last:border-0 -mx-2 px-2 rounded-md hover:bg-[var(--accent-soft)] transition-colors group"
+              >
                 {post.thumbnailUrl && (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={post.thumbnailUrl} alt={captionPreview(post.caption)} className="w-16 h-16 object-cover rounded-md flex-shrink-0" />
                 )}
                 <div className="flex-1 min-w-0">
                   <div className="text-sm text-[var(--ink)] truncate flex items-center gap-1.5">
-                    {captionPreview(post.caption)}
-                    {analysis.topByEngagement?.post.id === post.id && (
-                      <Badge color="green" size="sm">
-                        최고 참여
-                      </Badge>
-                    )}
+                    <span className="truncate">{captionPreview(post.caption)}</span>
+                    <ExternalLink size={12} className="text-[var(--ink-muted)] opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
                   </div>
-                  <div className="text-xs text-[var(--ink-muted)] mt-0.5">
-                    {new Date(post.timestamp).toLocaleDateString('ko-KR')}
+                  <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                    <span className="text-xs text-[var(--ink-muted)]">{new Date(post.timestamp).toLocaleDateString('ko-KR')}</span>
+                    {analysis.topByEngagement?.post.id === post.id && <Badge color="green" size="sm">최고 참여</Badge>}
+                    {analysis.topByLikes?.id === post.id && <Badge color="blue" size="sm">최다 좋아요</Badge>}
+                    {analysis.topByComments?.id === post.id && <Badge color="purple" size="sm">최다 댓글</Badge>}
                   </div>
                 </div>
                 <div className="text-right text-xs text-[var(--ink-secondary)] flex-shrink-0 space-y-0.5 tabular-nums">
                   <div>좋아요 {post.likeCount.toLocaleString()}</div>
                   <div>댓글 {post.commentsCount.toLocaleString()}</div>
                 </div>
-              </div>
+              </a>
             ))}
           </div>
         )}
