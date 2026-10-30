@@ -18,7 +18,15 @@ function detectMode(yearMonth: string, compareMonth: string): CompareMode {
   return 'custom';
 }
 
-export function PeriodControls({ yearMonth, compareMonth }: { yearMonth: string; compareMonth: string }) {
+export function PeriodControls({
+  yearMonth,
+  compareMonth,
+  basePath = '/',
+}: {
+  yearMonth: string;
+  compareMonth: string;
+  basePath?: string;
+}) {
   const router = useRouter();
   const [draftMonth, setDraftMonth] = useState(yearMonth);
   const [mode, setMode] = useState<CompareMode>(detectMode(yearMonth, compareMonth));
@@ -31,7 +39,7 @@ export function PeriodControls({ yearMonth, compareMonth }: { yearMonth: string;
         : compareMode === 'prev_year'
           ? sameMonthLastYear(month)
           : customCompare;
-    router.push(`/?yearMonth=${month}&compareMonth=${resolvedCompare}`);
+    router.push(`${basePath}?yearMonth=${month}&compareMonth=${resolvedCompare}`);
   }
 
   return (

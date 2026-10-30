@@ -5,7 +5,7 @@ import { currentYearMonth } from '@/lib/channels';
 const GRAPH_VERSION = 'v21.0';
 
 // TODO: 저장수(saves)는 계정 단위로 한 번에 주는 API가 없다 — 게시물별 insights를
-// 합산해야 해서 범위에서 뺐다. manual-metrics-entry로 입력한다.
+// 합산해야 해서 범위에서 뺐다. 수동 입력 기능 제거로 현재 입력 경로 없음.
 export async function fetchInstagramSnapshot(): Promise<Record<string, number>> {
   const { accessToken } = await getValidInstagramAccess();
 

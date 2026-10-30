@@ -26,7 +26,7 @@ export interface OverviewSummary {
   improvements: string[];
 }
 
-interface RankedChange {
+export interface RankedChange {
   channelLabel: string;
   metricLabel: string;
   pct: number;
@@ -207,7 +207,7 @@ export async function getOverviewTrend(monthsBack = 6): Promise<OverviewTrend> {
   };
 }
 
-function getRankedChanges(dashboard: ReturnType<typeof getDashboardData>): RankedChange[] {
+export function getRankedChanges(dashboard: ReturnType<typeof getDashboardData>): RankedChange[] {
   const ranked: RankedChange[] = [];
   for (const card of dashboard.cards) {
     for (const metric of card.metrics) {

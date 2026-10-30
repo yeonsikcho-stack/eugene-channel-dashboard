@@ -1,22 +1,14 @@
 import Link from 'next/link';
-import { PlayCircle, Camera, Rss, Newspaper, type LucideIcon } from 'lucide-react';
+import { FileText } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
 import { Card } from '@/components/ui/Card';
-import { CollectButton } from '@/components/CollectButton';
 import { CollectAllButton } from '@/components/CollectAllButton';
 import { Sparkline } from '@/components/Sparkline';
 import { PeriodControls } from '@/components/PeriodControls';
 import { getChannelTrend, getDashboardData } from '@/lib/metrics';
 import { getOverviewSummary, getOverviewTrend, type OverviewTile, type OverviewTrend } from '@/lib/overview';
-import { currentYearMonth, shiftYearMonth } from '@/lib/channels';
-import type { Channel, MetricCardItem, MetricChange } from '@/types';
-
-const CHANNEL_ICONS: Record<Channel, LucideIcon> = {
-  youtube: PlayCircle,
-  instagram: Camera,
-  naver_blog: Rss,
-  online_sabo: Newspaper,
-};
+import { CHANNEL_ICONS, currentYearMonth, shiftYearMonth } from '@/lib/channels';
+import type { MetricCardItem, MetricChange } from '@/types';
 
 interface HomePageProps {
   searchParams: Promise<{ yearMonth?: string; compareMonth?: string }>;
@@ -40,7 +32,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
     <div>
       <div className="flex items-start justify-between mb-5 flex-wrap gap-4">
         <div>
-          <h1 className="text-[22px] font-semibold text-[var(--ink)] tracking-tight">채널 운영 브리핑</h1>
+          <h1 className="text-[22px] font-semibold text-[var(--ink)] tracking-tight">커뮤니케이션 채널 성과 지표</h1>
           <p className="text-sm text-[var(--ink-secondary)] mt-1">
             {yearMonth} · {compareMonth} 대비
           </p>
@@ -48,10 +40,11 @@ export default async function HomePage({ searchParams }: HomePageProps) {
         <div className="flex items-center gap-2">
           <CollectAllButton />
           <Link
-            href="/entry"
-            className="text-sm px-3.5 py-2 rounded-md bg-[var(--ink)] text-white hover:bg-[#2a2d3d] transition-colors"
+            href={`/report?yearMonth=${yearMonth}`}
+            className="flex items-center gap-1.5 text-sm px-3.5 py-2 rounded-md bg-[var(--ink)] text-white hover:bg-[#2a2d3d] transition-colors"
           >
-            수동 입력
+            <FileText size={14} />
+            리포트 보기
           </Link>
         </div>
       </div>
@@ -145,7 +138,6 @@ export default async function HomePage({ searchParams }: HomePageProps) {
               <div className="mt-3 pt-3 border-t border-[var(--border-soft)] text-xs text-[var(--ink-muted)]">
                 마지막 업데이트: {lastUpdated ?? '아직 없음'}
               </div>
-              {card.channel !== 'naver_blog' && <CollectButton channel={card.channel} />}
             </Card>
           );
         })}

@@ -1,3 +1,4 @@
+import { PlayCircle, Camera, Rss, Newspaper, type LucideIcon } from 'lucide-react';
 import type { Channel, MetricChange, MetricDirection } from '@/types';
 
 export const CHANNELS: Channel[] = ['youtube', 'instagram', 'naver_blog', 'online_sabo'];
@@ -7,6 +8,13 @@ export const CHANNEL_LABELS: Record<Channel, string> = {
   youtube: '유튜브',
   instagram: '인스타그램',
   naver_blog: '네이버 블로그',
+};
+
+export const CHANNEL_ICONS: Record<Channel, LucideIcon> = {
+  youtube: PlayCircle,
+  instagram: Camera,
+  naver_blog: Rss,
+  online_sabo: Newspaper,
 };
 
 export interface MetricDef {
