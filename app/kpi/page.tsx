@@ -5,6 +5,8 @@ import { CHANNELS, CHANNEL_LABELS } from '@/lib/channels';
 import { buildKpiInsights, getChannelKpis, KPI_TARGETS } from '@/lib/kpi';
 import type { Channel } from '@/types';
 
+export const dynamic = 'force-dynamic';
+
 export default function KpiPage() {
   const insights = buildKpiInsights();
 
